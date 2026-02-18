@@ -38,7 +38,7 @@ void	example_access(void)
 	}
 	if (access("pipex.pdf", F_OK) == 0)
 		printf("File exists\n");
-		if (access("pipex.pdf", X_OK) == 0)
+	if (access("pipex.pdf", X_OK) == 0)
 		printf("File is executable\n");
 
 	// Mode 7 is equivalent to R_OK | W_OK | X_OK (4 | 2 | 1)
@@ -125,7 +125,7 @@ void example_rusage(void)
 		if (WIFEXITED(status))
 		{
 			printf("Child finished.\n");
-			printf("CPU time used: %ld.%06d sec\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
+			printf("CPU time used: %ld.%06ld sec\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
 		}
 	}
 }
@@ -136,18 +136,20 @@ void example_fork(void)
 	// fork() creates a duplicate process
 	pid_t pid = fork();
 
+
 	if (pid == -1)
 	{
 		perror("Fork failed");
 		return;
 	}
-
+	printf("Test (outside) - what is pid? %d\n", pid);
 	if (pid == 0)
 	{
 		// This block is executed ONLY by the Child
 		printf("CHILD: I am the child process.\n");
 		printf("CHILD: My PID is %d.\n", getpid());
 		printf("CHILD: My Parent's PID is %d.\n", getppid());
+		printf("Test (CHILD Block) - what is pid? %d\n", pid);
 		exit(0); // Child exits here
 	}
 	else

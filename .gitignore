@@ -1,2 +1,15 @@
+# Object files
 *.o
+*.a
+
+# Executables
 pipex
+a.out
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Test artifacts
+*.dSYM/
+*.log
