@@ -6,13 +6,13 @@
 #    By: dachin <dachin@student.codam.nl>             +#+                      #
 #                                                    +#+                       #
 #    Created: 2026/02/18 12:17:36 by dachin        #+#    #+#                  #
-#    Updated: 2026/02/18 12:20:24 by dachin        ########   odam.nl          #
+#    Updated: 2026/02/18 16:34:09 by dachin        ########   odam.nl          #
 #                                                                              #
 # **************************************************************************** #
 
 
 # List of source files
-SRCS =
+SRCS = src/main.c
 
 # Creates object files by replacing .c with .o. $ references variables or automatic variables
 OBJS = $(SRCS:.c=.o)
@@ -38,7 +38,7 @@ all: $(NAME)
 
 # Build main executable
 $(NAME): $(LIBFT_LIB) $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(GRAPHICS_LIBS) $(LIBFT_LIB) -o $(NAME)
+	$(CC) $(CFLAGS) $(OBJS) $(LIBFT_LIB) -o $(NAME)
 
 # Build subproject libraries
 $(LIBFT_LIB):
