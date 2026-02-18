@@ -1,0 +1,363 @@
+================================================================================
+PIPEX: PARENT-OPTIMIZED PROJECT PLAN
+================================================================================
+
+OVERVIEW
+--------
+Pipex recreates shell piping behavior: `< infile cmd1 | cmd2 > outfile`
+You'll split your program into parallel processes that communicate via pipes.
+
+Strategy: Home = Theory/Planning, Cluster = Implementation/Debugging
+
+================================================================================
+PHASE 1: THE BLUEPRINT (Home Days)
+================================================================================
+
+GOAL: Understand concepts before coding. Don't learn fork() by trial/error.
+
+Task 1: Read the Manuals
+------------------------
+Study man pages for the "Big 5":
+- pipe()    : Creates communication channel between processes
+- fork()    : Duplicates current process
+- dup2()    : Redirects file descriptors
+- execve()  : Replaces process with new program
+- waitpid() : Waits for child process to finish
+
+open
+close
+read
+perror
+strerror
+access
+dup
+exit
+unlink
+wait
+
+
+Task 2: Draw the File Descriptor Table
+---------------------------------------
+Every process has 3 standard file descriptors:
+- 0 = stdin  (keyboard input)
+- 1 = stdout (screen output)
+- 2 = stderr (error messages)
+
+Draw what happens with `pipe(fd)`:
+- fd[0] = read end
+- fd[1] = write end
+
+Task 3: Map the Path Finder Logic
+----------------------------------
+To run `ls`, you need its full path: `/bin/ls`
+
+On paper, plan how to:
+1. Get envp (environment pointer)
+2. Find the line starting with "PATH="
+3. Split it by colons (:)
+4. Use access() to check which path contains your command
+
+================================================================================
+PHASE 2: THE INFRASTRUCTURE (Cluster Days)
+================================================================================
+
+GOAL: Get core system calls working. Bugs are expected - peer help is crucial.
+
+Step 1: The Skeleton
+--------------------
+Create main() that takes 4 arguments:
+```c
+int main(int argc, char **argv, char **envp)
+{
+    // argv[1] = infile
+    // argv[2] = cmd1
+    // argv[3] = cmd2
+    // argv[4] = outfile
+
+    if (argc != 5)
+        error_exit("Usage: ./pipex infile cmd1 cmd2 outfile");
+}
+```
+
+Step 2: Open the Files
+-----------------------
+```c
+// Read-only access
+int infile_fd = open(argv[1], O_RDONLY);
+if (infile_fd == -1)
+    perror("Error opening infile");
+
+// Write-only, create if needed, truncate existing
+int outfile_fd = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+if (outfile_fd == -1)
+    perror("Error opening outfile");
+```
+
+Step 3: The Pipe & First Fork
+------------------------------
+```c
+int fd[2];
+pipe(fd);  // fd[0]=read, fd[1]=write
+
+pid_t pid1 = fork();
+if (pid1 == 0)
+{
+    // Child 1 code here (execute cmd1)
+}
+```
+
+Step 4: The Second Fork
+------------------------
+```c
+pid_t pid2 = fork();
+if (pid2 == 0)
+{
+    // Child 2 code here (execute cmd2)
+}
+
+// Parent waits for both children
+waitpid(pid1, NULL, 0);
+waitpid(pid2, NULL, 0);
+```
+
+================================================================================
+PHASE 3: THE PATH PARSER (Home or Cluster)
+================================================================================
+
+GOAL: Build string manipulation to feed execve().
+
+Write get_path() function:
+```c
+char *get_path(char *cmd, char **envp)
+{
+    // 1. Find "PATH=" in envp
+    // 2. Split by ':' using ft_split
+    // 3. For each path, join with cmd
+    // 4. Use access(path, X_OK) to test
+    // 5. Return first valid path or NULL
+}
+```
+
+This is pure C string work - use your libft functions.
+Can be developed/tested on your laptop.
+
+================================================================================
+PHASE 4: ASSEMBLY & REDIRECTION (Cluster Days)
+================================================================================
+
+GOAL: Connect pipes using dup2() and execute commands.
+
+Child 1 Logic (cmd1):
+---------------------
+```c
+if (pid1 == 0)
+{
+    // Redirect stdin from infile
+    dup2(infile_fd, STDIN_FILENO);
+
+    // Redirect stdout to pipe write-end
+    dup2(fd[1], STDOUT_FILENO);
+
+    // CRUCIAL: Close unused pipe end
+    close(fd[0]);
+
+    // Close original fds (now duplicated)
+    close(fd[1]);
+    close(infile_fd);
+
+    // Execute command
+    char *path = get_path(argv[2], envp);
+    char **args = ft_split(argv[2], ' ');
+    execve(path, args, envp);
+
+    // Only reaches here if execve fails
+    perror("execve failed");
+    exit(1);
+}
+```
+
+Child 2 Logic (cmd2):
+---------------------
+```c
+if (pid2 == 0)
+{
+    // Redirect stdin from pipe read-end
+    dup2(fd[0], STDIN_FILENO);
+
+    // Redirect stdout to outfile
+    dup2(outfile_fd, STDOUT_FILENO);
+
+    // CRUCIAL: Close unused pipe end
+    close(fd[1]);
+
+    // Close original fds (now duplicated)
+    close(fd[0]);
+    close(outfile_fd);
+
+    // Execute command
+    char *path = get_path(argv[3], envp);
+    char **args = ft_split(argv[3], ' ');
+    execve(path, args, envp);
+
+    // Only reaches here if execve fails
+    perror("execve failed");
+    exit(1);
+}
+```
+
+Parent Process:
+---------------
+```c
+// Parent must close BOTH pipe ends
+close(fd[0]);
+close(fd[1]);
+close(infile_fd);
+close(outfile_fd);
+
+// Wait for children
+waitpid(pid1, NULL, 0);
+waitpid(pid2, NULL, 0);
+```
+
+================================================================================
+⚠️  THE BIGGEST TRAP: THE "GHOST" BUG
+================================================================================
+
+SYMPTOM: Program hangs forever, doing nothing.
+
+CAUSE: A pipe end wasn't closed.
+
+WHY IT HAPPENS:
+If a process reads from fd[0] while fd[1] is still open ANYWHERE
+(even in the parent!), the reader waits indefinitely for more data.
+
+GOLDEN RULE:
+**Close ALL pipe ends you're not actively using in EVERY process**
+(including the parent!)
+
+================================================================================
+PHASE 5: ERROR HANDLING & TESTING (Final Polish)
+================================================================================
+
+Test Cases:
+-----------
+```bash
+# Basic test
+./pipex infile "ls -l" "wc -l" outfile
+
+# Should match:
+< infile ls -l | wc -l > outfile
+
+# Test with non-existent infile
+./pipex ghost.txt "cat" "wc -l" outfile
+
+# Test with invalid command
+./pipex infile "notacommand" "wc -l" outfile
+
+# Test permissions
+./pipex /etc/shadow "cat" "wc -l" outfile
+```
+
+Error Handling:
+---------------
+- Check all system calls return values
+- Use perror() for descriptive errors
+- Free allocated memory before exit
+- Handle command not found
+- Handle file permission denied
+- Handle empty/invalid PATH
+
+================================================================================
+BONUS (If Required)
+================================================================================
+
+Multiple Pipes:
+```bash
+./pipex file1 cmd1 cmd2 cmd3 ... cmdn file2
+# Equivalent to:
+< file1 cmd1 | cmd2 | cmd3 | ... | cmdn > file2
+```
+
+Here_doc Support:
+```bash
+./pipex here_doc LIMITER cmd1 cmd2 file
+# Equivalent to:
+cmd1 << LIMITER | cmd2 >> file
+```
+
+================================================================================
+DEBUGGING TIPS
+================================================================================
+
+1. Print FD values to understand redirection:
+   ```c
+   dprintf(2, "Before dup2: stdin=%d, stdout=%d\n", 0, 1);
+   ```
+
+2. Use strace to see system calls:
+   ```bash
+   strace ./pipex infile "ls" "wc" outfile
+   ```
+
+3. Check which FDs are open:
+   ```bash
+   ls -l /proc/$(pidof pipex)/fd
+   ```
+
+4. Valgrind for memory leaks:
+   ```bash
+   valgrind --leak-check=full ./pipex ...
+   ```
+
+================================================================================
+COMMON MISTAKES
+================================================================================
+
+1. ❌ Forgetting to close unused pipe ends
+   ✅ Close fd[0] and fd[1] in parent after fork
+
+2. ❌ Not handling PATH edge cases
+   ✅ Test with empty PATH, no PATH, relative paths
+
+3. ❌ Memory leaks from ft_split
+   ✅ Free all split arrays after use
+
+4. ❌ Not checking execve failure
+   ✅ Always perror + exit after execve
+
+5. ❌ Wrong file permissions on open()
+   ✅ Use 0644 for outfile creation
+
+================================================================================
+TIMELINE ESTIMATE
+================================================================================
+
+Home (Theory):        2-3 days
+Cluster (Coding):     3-4 days
+Testing/Debugging:    1-2 days
+Bonus (optional):     2-3 days
+
+TOTAL: ~1 week for mandatory, ~1.5 weeks with bonus
+
+================================================================================
+RESOURCES
+================================================================================
+
+Man Pages:
+- man 2 pipe
+- man 2 fork
+- man 2 dup2
+- man 2 execve
+- man 2 waitpid
+- man 3 access
+
+Useful Links:
+- Understanding fork: https://www.geeksforgeeks.org/fork-system-call/
+- Understanding pipes: https://www.geeksforgeeks.org/pipe-system-call/
+- File descriptors: https://www.bottomupcs.com/file_descriptors.xhtml
+
+Similar Projects:
+- [minishell](../minishell/) - Uses similar concepts
+- [philosophers](../philosophers/) - Process management practice
+
+================================================================================
