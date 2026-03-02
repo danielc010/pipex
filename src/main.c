@@ -6,144 +6,167 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/18 12:39:22 by dachin        #+#    #+#                 */
-/*   Updated: 2026/02/18 18:27:33 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/02 23:22:26 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/pipex.h"
 
-char	*get_path(char **envp)
-{
-	printf("DEBUG: Checking envp...\n");
-	if (!envp)
-		printf("DEBUG: envp is NULL!\n");
-	else
-		printf("DEBUG: envp is valid\n");
-
-	int i = 0;
-	while (envp[i])
-	{
-		printf("DEBUG: envp[%d] = '%s'\n", i, envp[i]);  // Print each one
-		if (ft_strncmp(envp[i], "PATH=", 5) == 0)
-		{
-			printf("DEBUG: Found PATH! Value = '%s'\n", envp[i] + 5);
-			return (envp[i] + 5);
-		}
-		++i;
-	}
-	printf("DEBUG: Never found PATH in envp!\n");
-	return (NULL);
-}
-
-char *extract_cmd_name(char *cmd)
-{
-	char **cmd_split;
-	char *cmd_name;
-	cmd_split = ft_split(cmd, ' ');
-	cmd_name = cmd_split[0];
-	printf("DEBUG: cmd is %s!\n", cmd);
-	return (cmd_name);
-}
-
-char	**fill_path_array(char *path_line)
-{
-	char **path_array;
-	path_array = ft_split(path_line, ':');
-	printf("DEBUG: After split:\n");
-	int j = 0;
-	while (path_array[j])
-	{
-		printf("DEBUG: paths[%d] = '%s'\n", j, path_array[j]);
-		j++;
-	}
-	return (path_array);
-}
-
 int	main(int argc, char **argv, char **envp)
 {
-	(void)argc;  // ← Tell compiler you know it's unused
-    (void)argv;  // ← Tell compiler you know it's unused
-
-	// argv[1] = infile
-	char *cmd1 = argv[2];
-	// char *cmd2 = argv[3];
-	// argv[4] = outfile
-
-	int	infile_fd;
-	int	outfile_fd;
-	int	i;
+	int		infile_fd;
+	int		outfile_fd;
+	int		fd[2];
+	char	*cmd1_path;
+	char	*cmd2_path;
+	pid_t	pid1;
+	pid_t	pid2;
 
 	// argc validation
 	if (argc != 5)
 	{
 		write(2, "Usage: ./pipex infile cmd1 cmd2 outfile\n", 41);
+		return (EXIT_FAILURE);
 	}
-
-	// Open files
-	infile_fd = open(argv[1], O_RDONLY);
-	if (infile_fd == -1)
-		perror("Error opening infile");
-	outfile_fd = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0644);
-	if (outfile_fd == -1)
-		perror("Error opening outfile");
-
-	// Parse command
-	char *command;
-	command = extract_cmd_name(cmd1);
-
-	// Get path
-	char *path_line = get_path(envp);
-	char **parths_array;
-	char *full_path;
-	if (path_line)
+	open_files(argv[1], argv[4], &infile_fd, &outfile_fd);
+	create_pipe(fd, &infile_fd, &outfile_fd);
+	cmd1_path = get_path(argv[2], envp);
+	if (!cmd1_path)
 	{
-		parths_array = fill_path_array(path_line);
-		i = 0;
-		while (parths_array[i])
-		{
-			full_path = ft_strjoin(ft_strjoin(parths_array[i], "/"), command);
-			printf("DEBUG: Testing path: '%s'\n", full_path);
-			if (access(full_path, X_OK) == 0)
-			{
-				printf("DEBUG: ✓ Found executable at: '%s'\n", full_path);
-			}
-			++i;
-		}
+		write(2, "Command not found: ", 19);
+		write(2, argv[2], ft_strlen(argv[2]));
+		write(2, "\n", 1);
+		close(infile_fd);
+		close(outfile_fd);
+		close(fd[0]);
+		close(fd[1]);
+		return(EXIT_FAILURE);
 	}
-	else
-		ft_printf("Path not found in environment.\n");
+	cmd2_path = get_path(argv[3], envp);
+	if (!cmd2_path)
+	{
+		write(2, "Command not found: ", 19);
+		write(2, argv[3], ft_strlen(argv[3]));
+		write(2, "\n", 1);
+		free(cmd1_path);
+		close(infile_fd);
+		close(outfile_fd);
+		close(fd[0]);
+		close(fd[1]);
+		return(EXIT_FAILURE);
+	}
 
-	// // The pipe & first fork
-	// int	fd[2];
-	// pipe(fd); // fd[0]=read, fd[1]=write
+	// Fork Child 1
+	pid1 =	fork();
+	if (pid1 == -1)
+	{
+		perror("Error forking child 1");
+		free(cmd1_path);
+		free(cmd2_path);
+		close(infile_fd);
+		close(outfile_fd);
+		close(fd[0]);
+		close(fd[1]);
+		return (EXIT_FAILURE);
+	}
+	if (pid1 == 0)
+	{
+		char	**cmd1_args;
+		// redirect stdin (0) to read from infile
+		if (dup2(infile_fd, 0) == -1)
+		{
+			perror("child1 dup2 stdin failed");
+			exit(EXIT_FAILURE);
+		}
+		// redirect stdout (1) to write to pipe
+		if (dup2(fd[1], 1) == -1)
+		{
+			perror("child1 dup2 stdout failed");
+			exit(EXIT_FAILURE);
+		}
+		// Close unused fd
+		close(infile_fd);
+		close(outfile_fd);
+		close(fd[0]);
+		close(fd[1]);
 
-	// pid_t	pid1 = fork();
-	// if (pid1 == 0)
-	// {
-	// 	// Child block
-	// 	ft_printf("This is the child block of fork 1. PID is %d\n", getpid());
-	// 	exit(0);
-	// }
-	// else
-	// {
-	// 	// Parent block
-	// 	ft_printf("This is the parent block of fork 1. PID is %d\n", getpid());
-	// }
+		// Split commands into arguments
+		cmd1_args = ft_split(argv[2], ' ');
+		if (!cmd1_args)
+		{
+			perror("Error splitting cmd1");
+			exit(EXIT_FAILURE);
+		}
 
-	// pid_t	pid2 = fork();
-	// if (pid2 == 0)
-	// {
-	// 	// Child block
-	// 	ft_printf("This is the child block of fork 2. PID is %d\n", getpid());
-	// }
-	// else
-	// {
-	// 	// Parent block
-	// 	ft_printf("This is the parent block of fork 2. PID is %d\n", getpid());
-	// }
+		// Execute the command
+		if (execve(cmd1_path, cmd1_args, envp) == -1)
+		{
+			perror("execve cmd1 failed");
+			exit(EXIT_FAILURE);
+		}
+		exit(EXIT_SUCCESS);
+	}
 
-	// // Wait for both children
-	// waitpid(pid1, NULL, 0);
-	// waitpid(pid2, NULL, 0);
+	// Fork Child 2
+	pid2 = fork();
+	if (pid2 == -1)
+	{
+		perror("Error forking child 2");
+		free(cmd1_path);
+		free(cmd2_path);
+		close(infile_fd);
+		close(outfile_fd);
+		close(fd[0]);
+		close(fd[1]);
+		return (EXIT_FAILURE);
+	}
+	if (pid2 == 0)
+	{
+		char	**cmd2_args;
+		// redirect stdin (0) to read from pipe
+		if (dup2(fd[0], 0) == -1)
+		{
+			perror("child2 dup2 stdin failed");
+			exit(EXIT_FAILURE);
+		}
+		// redirect stdout (1) to write to outfile
+		if (dup2(outfile_fd, 1) == -1)
+		{
+			perror("child2 dup2 stdout failed");
+			exit(EXIT_FAILURE);
+		}
+		// Close unused fd
+		close(infile_fd);
+		close(outfile_fd);
+		close(fd[0]);
+		close(fd[1]);
+
+		// Split commands into arguments
+		cmd2_args = ft_split(argv[3], ' ');
+		if (!cmd2_args)
+		{
+			perror("Error splitting cmd2");
+			exit(EXIT_FAILURE);
+		}
+		// Execute the command
+		if (execve(cmd2_path, cmd2_args, envp) == -1)
+		{
+			perror("execve cmd2 failed");
+			exit(EXIT_FAILURE);
+		}
+		exit(EXIT_SUCCESS);
+	}
+
+	// PARENT CLEANUP
+	free(cmd1_path);
+	free(cmd2_path);
+	close(infile_fd);
+	close(outfile_fd);
+	close(fd[0]);
+	close(fd[1]);
+	waitpid(pid1, NULL, 0);
+	waitpid(pid2, NULL, 0);
+
 	return (EXIT_SUCCESS);
-}
+	}
+
