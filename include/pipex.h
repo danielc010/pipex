@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/18 09:34:08 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/02 23:21:53 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/04 10:38:11 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,16 @@
 # include <sys/wait.h>
 # include <stdlib.h>
 
+typedef struct s_pipex
+{
+	int		infile_fd;
+	int		outfile_fd;
+	int		fd[2];
+	char	*cmd1_path;
+	char	*cmd2_path;
+}	t_pipex;
+
+
 // parsing.c
 char	**extract_path_to_array(char **envp);
 char	*extract_cmd_name(char *cmd);
@@ -28,7 +38,15 @@ char	**append_cmd(char **paths_array, char *cmd);
 char	*get_path(char *cmd, char **envp);
 
 // utils.c
+
+void	open_files(char **argv, t_pipex *data);
+void	create_pipe(t_pipex *data);
+void	close_inoutpipefd(int pipe_fd[2], int *infile_fd, int *outfile_fd);
+void	cleanup_and_exit(t_pipex *data);
+void	init_pipex(t_pipex *data, char **argv, char**envp);
+
+// utils2.c
 void	free_array(char **array);
-void	open_files(char *argv1, char *argv4, int *infile_fd, int *outfile_fd);
-void create_pipe(int fd[2], int *infile_fd, int *outfile_fd);
+void	execute_child1(t_pipex *data, char **argv, char **envp);
+void	execute_child2(t_pipex *data, char **argv, char **envp);
 #endif

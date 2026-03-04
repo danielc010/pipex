@@ -4,6 +4,9 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
+# Disable core dumps for this script
+ulimit -c 0
+
 test_count=0
 pass_count=0
 
