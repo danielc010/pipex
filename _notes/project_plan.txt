@@ -361,3 +361,6 @@ Similar Projects:
 - [philosophers](../philosophers/) - Process management practice
 
 ================================================================================
+
+
+valgrind --track-fds=yes

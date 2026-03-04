@@ -42,3 +42,4 @@ Useful Links:
 - Understanding fork: https://www.geeksforgeeks.org/fork-system-call/
 - Understanding pipes: https://www.geeksforgeeks.org/pipe-system-call/
 - File descriptors: https://www.bottomupcs.com/file_descriptors.xhtml
+- Shell command language: https://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html

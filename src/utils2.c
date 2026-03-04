@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/04 09:18:49 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/04 15:03:10 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/04 17:32:07 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,13 +30,30 @@ void	free_array(char **array)
 // Close fds, free memory without exit
 void	cleanup_resources(t_pipex *data)
 {
+	int	i;
+
 	if (!data)
 		return ;
-	if (data->cmd1_path)
-		free(data->cmd1_path);
-	if (data->cmd2_path)
-		free(data->cmd2_path);
-	close_inoutpipefd(data->fd, &data->infile_fd, &data->outfile_fd);
+	if (data->cmd_paths)
+	{
+		i = 0;
+		while (i < data->num_cmds)
+		{
+			if (data->cmd_paths[i++])
+				free(data->cmd_paths[i++]);
+		}
+		free(data->cmd_paths);
+	}
+	if (data->pipes)
+	{
+		close_all_pipes(data->pipes, data->num_cmds - 1);
+		i = 0;
+		while (i < data->num_cmds - 1)
+			free(data->pipes[i++]);
+		free(data->pipes);
+	}
+	close(data->infile_fd);
+	close(data->outfile_fd);
 }
 
 // Close fds, free memory with exit
@@ -48,59 +65,56 @@ void	cleanup_and_exit(t_pipex *data)
 	exit(EXIT_FAILURE);
 }
 
-// Code execution for child1
-// Redirect stdin (0) to read from infile
-// Redirect stdout (1) to write to pipe
-void	execute_child1(t_pipex *data, char **argv, char **envp)
+pid_t	*fork_children(t_pipex *data, char **argv, char **envp)
 {
-	char	**cmd1_args;
+	pid_t	*pids;
+	int		i;
 
-	if (!data || !argv || !envp)
-		exit(EXIT_FAILURE);
+	pids = malloc(sizeof(pid_t) * data->num_cmds);
+	if (!pids)
+		cleanup_and_exit(data);
+	i = 0;
+	while (i < data->num_cmds)
+	{
+		pids[i] = fork();
+		if (pids[i] == -1)
+			cleanup_and_exit(data);
+		if (pids[i] == 0)
+			execute_cmd(data, i, argv, envp);
+		++i;
+	}
+	return (pids);
+}
 
-	if (dup2(data->infile_fd, 0) == -1 || dup2(data->fd[1], 1) == -1)
+void	execute_cmd(t_pipex *data, int cmd_index, char **argv, char **envp)
+{
+	char	**cmd_args;
+
+	if (cmd_index == 0)
+		dup2(data->infile_fd, STDIN_FILENO);
+	else
+		dup2(data->pipes[cmd_index - 1][0], STDIN_FILENO);
+	if (cmd_index == data->num_cmds - 1)
+		dup2(data->outfile_fd, STDOUT_FILENO);
+	else
+		dup2(data->pipes[cmd_index][1], STDOUT_FILENO);
+	close_all_pipes(data->pipes, data->num_cmds - 1);
+	close(data->infile_fd);
+	close(data->outfile_fd);
+	cmd_args = ft_split(argv[2 + cmd_index], ' ');
+	if (!cmd_args || execve(data->cmd_paths[cmd_index], cmd_args, envp) == -1)
 	{
-		perror("child1 dup2 failed");
-		exit(EXIT_FAILURE);
-	}
-	close_inoutpipefd(data->fd, &data->infile_fd, &data->outfile_fd);
-	cmd1_args = ft_split(argv[2], ' ');
-	if (!cmd1_args)
-	{
-		perror("Error splitting cmd1");
-		exit(EXIT_FAILURE);
-	}
-	if (execve(data->cmd1_path, cmd1_args, envp) == -1)
-	{
-		perror("execve cmd1 failed");
+		perror("execve failed");
 		exit(EXIT_FAILURE);
 	}
 }
 
-// Code execution for child2
-// Redirect stdin (0) to read from pipe
-// Redirect stdout (1) to write to outfile
-void	execute_child2(t_pipex *data, char **argv, char **envp)
+void	wait_children(pid_t *pids, int num_cmds)
 {
-	char	**cmd2_args;
+	int	i;
 
-	if (!data || !argv || !envp)
-		exit(EXIT_FAILURE);
-	if (dup2(data->fd[0], 0) == -1 || dup2(data->outfile_fd, 1) == -1)
-	{
-		perror("child2 dup2 failed");
-		exit(EXIT_FAILURE);
-	}
-	close_inoutpipefd(data->fd, &data->infile_fd, &data->outfile_fd);
-	cmd2_args = ft_split(argv[3], ' ');
-	if (!cmd2_args)
-	{
-		perror("Error splitting cmd2");
-		exit(EXIT_FAILURE);
-	}
-	if (execve(data->cmd2_path, cmd2_args, envp) == -1)
-	{
-		perror("execve cmd2 failed");
-		exit(EXIT_FAILURE);
-	}
+	i = 0;
+	while (i < num_cmds)
+		waitpid(i++, NULL, 0);
+	free(pids);
 }
