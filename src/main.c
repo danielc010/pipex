@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/18 12:39:22 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/04 10:43:16 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/04 14:48:04 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ int	main(int argc, char **argv, char **envp)
 		, cleanup_and_exit(&data), EXIT_FAILURE);
 	if (pid2 == 0)
 		execute_child2(&data, argv, envp);
-	cleanup_and_exit(&data);
+	cleanup_resources(&data);
 	waitpid(pid1, NULL, 0);
 	waitpid(pid2, NULL, 0);
 	return (EXIT_SUCCESS);

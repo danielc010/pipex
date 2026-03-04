@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/02 14:57:36 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/04 11:23:44 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/04 14:49:20 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,12 @@
 
 // Open both in and out files. Outfile to allow write,
 // create if non-existent, overwrite if not-empty  (per > behaviour),
-// ****TODO*** 0644 means
+// 0644 means owner can read & write, other users can only read.
 //** TODO*** guard clauses?
 void	open_files(char **argv, t_pipex *data)
 {
+	if (!argv || !data)
+		return ;
 	data->infile_fd = open(argv[1], O_RDONLY);
 	if (data->infile_fd == -1)
 	{
@@ -35,6 +37,8 @@ void	open_files(char **argv, t_pipex *data)
 
 void	create_pipe(t_pipex *data)
 {
+	if (!data)
+		return ;
 	if (pipe(data->fd) == -1)
 	{
 		perror("Error creating pipe");
@@ -47,25 +51,18 @@ void	create_pipe(t_pipex *data)
 // Close these fds which are unused.
 void	close_inoutpipefd(int pipe_fd[2], int *infile_fd, int *outfile_fd)
 {
+	if (!pipe_fd || !infile_fd || !outfile_fd)
+		return ;
 	close(*infile_fd);
 	close(*outfile_fd);
 	close(pipe_fd[0]);
 	close(pipe_fd[1]);
 }
 
-// Close fds, free memory and exit program
-void	cleanup_and_exit(t_pipex *data)
-{
-		if (data->cmd1_path)
-			free(data->cmd1_path);
-		if (data->cmd2_path)
-			free(data->cmd2_path);
-		close_inoutpipefd(data->fd, &data->infile_fd, &data->outfile_fd);
-		exit(EXIT_FAILURE);
-}
-
 void	init_pipex(t_pipex *data, char **argv, char**envp)
 {
+	if (!data || !argv || !envp)
+		return ;
 	data->cmd1_path = NULL;
 	data->cmd2_path = NULL;
 	open_files(argv, data);
