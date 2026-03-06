@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/02 14:57:36 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/04 17:47:55 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/06 15:45:01 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@
 // Open both in and out files. Outfile to allow write,
 // create if non-existent, overwrite if not-empty  (per > behaviour),
 // 0644 means owner can read & write, other users can only read.
-//** TODO*** guard clauses?
 void	open_files(char **argv, t_pipex *data, int argc)
 {
 	if (!argv || !data)
@@ -35,6 +34,7 @@ void	open_files(char **argv, t_pipex *data, int argc)
 	}
 }
 
+// Create num_cmds - 1 pipes.
 void	create_pipe(t_pipex *data)
 {
 	int	i;
@@ -59,7 +59,7 @@ void	create_pipe(t_pipex *data)
 	}
 }
 
-// // Close all pipes
+// Close all pipes
 void	close_all_pipes(int **pipes, int num_pipes)
 {
 	int	i;
@@ -79,7 +79,7 @@ void	init_pipex(t_pipex *data, char **argv, char**envp, int argc)
 	int	i;
 
 	if (!data || !argv || !envp)
-		return ;
+		error_exit("Invalid arguments to init_pipex") ;
 	data->cmd_paths = malloc(sizeof(char *) * (data->num_cmds + 1));
 	if (!data->cmd_paths)
 		error_exit("malloc failed");
