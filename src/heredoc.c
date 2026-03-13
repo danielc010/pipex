@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/13 06:12:05 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/13 06:41:32 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/13 08:19:32 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 // Read line from terminal until LIMITER appears. All the commands are to be
 // passed via pipe: write line to pipe, close write end and use read end as
-//infile
+// infile
 static void	read_heredoc(t_pipex *data)
 {
 	char	*line;

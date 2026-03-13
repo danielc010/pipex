@@ -5,6 +5,12 @@ _This project has been created as part of the 42 curriculum by dachin_
 ## Description
 
 This project focuses on handling pipes. The pipe is an in-memory buffer that connects two processes together. File descriptors point to the pipe object, which buffers data sent to it (via a write) to be drained (via a read).
+We recreate this behaviour c< file1 cmd1 | cmd2 > file2`.
+Bonus:
+1) Support multiple pipes `< file1 cmd1 | cmd2 ... | cmdn > file2`.
+2) Support << >> when the first parameter is "here_doc".
+	`cmd1 << LIMITER | cmd2 >> file`
+
 
 ## Instructions
 ``` bash
@@ -24,7 +30,12 @@ make fclean
 make re
 
 # Running the program
-./pipex
+## Normal pipe
+./pipex file1 cmd1 cmd2 ... cmdn file2
+
+## heredoc pipe
+./pipex here_doc LIMITER cmd1 cmd2 ... cmdn file
+
 ```
 
 

@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/04 09:18:49 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/13 06:27:47 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/13 08:20:42 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,8 @@ void	cleanup_and_exit(t_pipex *data)
 	exit(EXIT_FAILURE);
 }
 
-// Fork once for every cmd. Run execve for the child process i.e. pid == 0.
+// Fork once for every cmd. Run dup & execve for the child process
+// i.e. pid == 0.
 pid_t	*fork_children(t_pipex *data, char **argv, char **envp)
 {
 	pid_t	*pids;
