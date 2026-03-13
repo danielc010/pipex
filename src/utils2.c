@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/04 09:18:49 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/06 16:16:28 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/13 06:27:47 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ void	free_array(char **array)
 	int	i;
 
 	if (!array)
-		return;
+		return ;
 	i = 0;
 	while (array[i])
 	{
@@ -88,33 +88,4 @@ pid_t	*fork_children(t_pipex *data, char **argv, char **envp)
 		++i;
 	}
 	return (pids);
-}
-
-// Dup and run execve. The first and last cmds are special.
-void	execute_cmd(t_pipex *data, int cmd_index, char **argv, char **envp)
-{
-	char	**cmd_args;
-	int		argv_offset;
-
-	if (cmd_index == 0)
-		dup2(data->infile_fd, STDIN_FILENO);
-	else
-		dup2(data->pipes[cmd_index - 1][0], STDIN_FILENO);
-	if (cmd_index == data->num_cmds - 1)
-		dup2(data->outfile_fd, STDOUT_FILENO);
-	else
-		dup2(data->pipes[cmd_index][1], STDOUT_FILENO);
-	close_all_pipes(data->pipes, data->num_cmds - 1);
-	close(data->infile_fd);
-	close(data->outfile_fd);
-	if (data->heredoc)
-		argv_offset = 3;
-	else
-		argv_offset = 2;
-	cmd_args = ft_split(argv[cmd_index + argv_offset], ' ');
-	if (!cmd_args || execve(data->cmd_paths[cmd_index], cmd_args, envp) == -1)
-	{
-		perror("execve failed");
-		exit(EXIT_FAILURE);
-	}
 }

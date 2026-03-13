@@ -6,13 +6,14 @@
 #    By: dachin <dachin@student.codam.nl>             +#+                      #
 #                                                    +#+                       #
 #    Created: 2026/02/18 12:17:36 by dachin        #+#    #+#                  #
-#    Updated: 2026/03/06 17:10:03 by dachin        ########   odam.nl          #
+#    Updated: 2026/03/13 06:43:45 by dachin        ########   odam.nl          #
 #                                                                              #
 # **************************************************************************** #
 
 
 # List of source files
-SRCS = src/main.c src/parsing.c src/utils.c src/utils2.c src/utils3.c
+SRCS = src/main.c src/parsing.c src/utils.c src/utils2.c src/utils3.c \
+		src/heredoc.c
 
 # Creates object files by replacing .c with .o. $ references variables or automatic variables
 OBJS = $(SRCS:.c=.o)
@@ -74,7 +75,7 @@ re:	fclean all
 # Run bash test suite
 test: $(NAME)
 	@echo "Running test suite..."
-	@cd tests && ./run_all_tests.sh
+	@cd tests && ./test.sh
 
 # fsanitise for macOS
 sanitize: CFLAGS += -fsanitize=address -g
