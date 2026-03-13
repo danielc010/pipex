@@ -36,9 +36,10 @@ make re
 ## heredoc pipe
 ./pipex here_doc LIMITER cmd1 cmd2 ... cmdn file
 
+# Useful valgrind check for open fds
+valgrind --track-fds=yes
+
 ```
-
-
 
 ## Resources & Credits
 Man Pages:
