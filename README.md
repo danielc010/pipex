@@ -17,9 +17,6 @@ Bonus:
 # Compile the project
 make
 
-# Compile with bonus (if applicable)
-make bonus
-
 # Clean object files
 make clean
 
