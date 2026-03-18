@@ -16,6 +16,7 @@
 # include "../Libft/libft.h"
 # include <fcntl.h>
 # include <sys/wait.h>
+# include <errno.h>
 
 // num_cmds: number of cmds
 // pipes: array of pipe pairs

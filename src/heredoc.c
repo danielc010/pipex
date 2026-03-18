@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/13 06:12:05 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/13 08:19:32 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/13 19:33:52 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,6 +63,9 @@ void	init_heredoc(t_pipex *data, char **argv, char**envp, int argc)
 
 	if (!data || !argv || !envp)
 		error_exit("Invalid arguments to init_heredoc");
+	data->heredoc = 1;
+	data->limiter = argv[2];
+	data->num_cmds = argc - 4;
 	read_heredoc(data);
 	open_files_heredoc(data, argv, argc);
 	create_pipe(data);
@@ -74,13 +77,6 @@ void	init_heredoc(t_pipex *data, char **argv, char**envp, int argc)
 	while (i < data->num_cmds)
 	{
 		data->cmd_paths[i] = get_path(argv[i + 3], envp);
-		if (!data->cmd_paths[i])
-		{
-			write(2, "Command not found: ", 19);
-			write(2, argv[i + 3], ft_strlen(argv[i + 3]));
-			write(2, "\n", 1);
-			cleanup_and_exit(data);
-		}
 		++i;
 	}
 }

@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/02 14:57:36 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/13 06:28:19 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/18 05:58:03 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,10 @@
 // Open both in and out files. Outfile to allow write,
 // create if non-existent, overwrite if not-empty  (per > behaviour),
 // 0644 means owner can read & write, other users can only read.
+// Infile read error, outfile write error - shell behavior is to CONTINUE
+// running both commands. /dev/null (special file on Unix that Reads returns
+// EOF and Writes discards everything written to it) is used so child1 gets
+// empty input while childn's stdout goes nowhere and exits 0.
 static void	open_files(char **argv, t_pipex *data, int argc)
 {
 	if (!argv || !data)
@@ -22,14 +26,16 @@ static void	open_files(char **argv, t_pipex *data, int argc)
 	data->infile_fd = open(argv[1], O_RDONLY);
 	if (data->infile_fd == -1)
 	{
-		perror("Error opening infile");
-		exit(EXIT_FAILURE);
+		perror(argv[1]);
+		if (errno == EACCES)
+			data->infile_fd = open("/dev/null", O_RDONLY);
+		else
+			exit(EXIT_FAILURE);
 	}
 	data->outfile_fd = open(argv[argc - 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (data->outfile_fd == -1)
 	{
-		perror("Error opening outfile");
-		close(data->outfile_fd);
+		perror(argv[argc - 1]);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -81,6 +87,8 @@ void	init_pipex(t_pipex *data, char **argv, char**envp, int argc)
 
 	if (!data || !argv || !envp)
 		error_exit("Invalid arguments to init_pipex");
+	data->heredoc = 0;
+	data->num_cmds = argc - 3;
 	data->cmd_paths = malloc(sizeof(char *) * (data->num_cmds + 1));
 	if (!data->cmd_paths)
 		error_exit("malloc failed");
@@ -91,13 +99,6 @@ void	init_pipex(t_pipex *data, char **argv, char**envp, int argc)
 	while (i < data->num_cmds)
 	{
 		data->cmd_paths[i] = get_path(argv[i + 2], envp);
-		if (!data->cmd_paths[i])
-		{
-			write(2, "Command not found: ", 19);
-			write(2, argv[i + 2], ft_strlen(argv[i + 2]));
-			write(2, "\n", 1);
-			cleanup_and_exit(data);
-		}
 		++i;
 	}
 }

@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/02 15:33:18 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/02 22:09:26 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/18 07:41:38 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ char	**extract_path_to_array(char **envp)
 	return (paths_array);
 }
 
-// extract only the non-argument / flag part of the command e.g. ls in "ls -l"
+// extract only the non-argument part of the command e.g. ls in "ls -l"
 char	*extract_cmd_name(char *cmd)
 {
 	int		i;
@@ -72,18 +72,12 @@ char	**append_cmd(char **paths_array, char *cmd)
 	return (paths_array);
 }
 
-char	*get_path(char *cmd, char **envp)
+// Loop through PATH directories til the 1st one that exists and is executable
+static char	*search_path(char **paths_array)
 {
-	char	**paths_array;
-	char	*cmd_name;
-	char	*result;
 	int		i;
+	char	*result;
 
-	cmd_name = extract_cmd_name(cmd);
-	paths_array = extract_path_to_array(envp);
-	if (!cmd_name || !paths_array || !append_cmd(paths_array, cmd_name))
-		return (free(cmd_name), free_array(paths_array), NULL);
-	free(cmd_name);
 	i = 0;
 	result = NULL;
 	while (paths_array[i])
@@ -96,4 +90,28 @@ char	*get_path(char *cmd, char **envp)
 		++i;
 	}
 	return (free_array(paths_array), result);
+}
+
+// If cmd starts with '/', it's an absolute path - skip PATH search.
+// F_OK checks existence, X_OK checks executability.
+// Exists but not executable - exit 126. Not found - return NULL → exit 127.
+char	*get_path(char *cmd, char **envp)
+{
+	char	**paths_array;
+	char	*cmd_name;
+
+	cmd_name = extract_cmd_name(cmd);
+	if (!cmd_name)
+		return (NULL);
+	if (cmd_name[0] == '/')
+	{
+		if (access(cmd_name, F_OK) == 0)
+			return (cmd_name);
+		return (free(cmd_name), NULL);
+	}
+	paths_array = extract_path_to_array(envp);
+	if (!paths_array || !append_cmd(paths_array, cmd_name))
+		return (free(cmd_name), free_array(paths_array), NULL);
+	free(cmd_name);
+	return (search_path(paths_array));
 }

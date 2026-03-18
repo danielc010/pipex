@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/02/18 12:39:22 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/13 06:45:49 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/18 06:37:05 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,13 @@ int	main(int argc, char **argv, char **envp)
 	t_pipex	data;
 	pid_t	*pids;
 
-	if (argc >= 6 && ft_strncmp(argv[1], "here_doc", 9) == 0)
+	if (argc < 5)
 	{
-		data.heredoc = 1;
-		data.limiter = argv[2];
-		data.num_cmds = argc - 4;
+		write(2, "Too few arguments.\n", 20);
+		return (EXIT_FAILURE);
+	}
+	else if (argc >= 6 && ft_strncmp(argv[1], "here_doc", 9) == 0)
+	{
 		init_heredoc(&data, argv, envp, argc);
 		pids = fork_children(&data, argv, envp);
 		cleanup_resources(&data);
@@ -29,8 +31,6 @@ int	main(int argc, char **argv, char **envp)
 	}
 	else if (argc >= 5)
 	{
-		data.heredoc = 0;
-		data.num_cmds = argc - 3;
 		init_pipex(&data, argv, envp, argc);
 		pids = fork_children(&data, argv, envp);
 		cleanup_resources(&data);
