@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/06 16:17:01 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/18 06:45:54 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/18 07:53:56 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,7 +63,7 @@ static void	cmd_not_found(char *cmd_str)
 	exit(127);
 }
 
-// EACCES means file found but not executable → exit 126. Otherwise → exit 1.
+// EACCES means file found but not executable - exit 126. Otherwise - exit 1.
 static void	handle_execve_error(char *cmd)
 {
 	if (errno == EACCES)
