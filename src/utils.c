@@ -6,11 +6,23 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/02 14:57:36 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/18 13:26:30 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/18 18:23:28 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/pipex.h"
+
+static void	write_zsh_error(char *filename, int err_code)
+{
+	write(2, "zsh: ", 5);
+	// write(2, filename, ft_strlen(filename));
+	// write(2, ": ", 2);
+	// write(2, strerror(err_code), ft_strlen(strerror(err_code)));
+	write(2, strerror(err_code), ft_strlen(strerror(err_code)));
+	write(2, ": ", 2);
+	write(2, filename, ft_strlen(filename));
+	write(2, "\n", 1);
+}
 
 // Open both in and out files. Outfile to allow write,
 // create if non-existent, overwrite if not-empty  (per > behaviour),
@@ -29,11 +41,7 @@ static void	open_files(char **argv, t_pipex *data, int argc)
 	if (data->infile_fd == -1)
 	{
 		saved_errno = errno;
-		write(2, "zsh: ", 6);
-		write(2, argv[1], ft_strlen(argv[1]));
-		write(2, ": ", 2);
-		write(2, strerror(saved_errno), ft_strlen(strerror(saved_errno)));
-		write(2, "\n", 2);
+		write_zsh_error(argv[1], saved_errno);
 		if (saved_errno == EACCES || saved_errno == ENOENT)
 			data->infile_fd = open("/dev/null", O_RDONLY);
 		else
@@ -42,7 +50,7 @@ static void	open_files(char **argv, t_pipex *data, int argc)
 	data->outfile_fd = open(argv[argc - 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (data->outfile_fd == -1)
 	{
-		perror(argv[argc - 1]);
+		write_zsh_error(argv[argc - 1], errno);
 		data->outfile_err = 1;
 		data->outfile_fd = open("/dev/null", O_WRONLY);
 	}

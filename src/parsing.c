@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/02 15:33:18 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/18 11:43:25 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/18 14:52:52 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ char	*extract_cmd_name(char *cmd)
 	return (result);
 }
 
-// append a "/" and cmd to the path
+// Append a "/" and cmd to the path, i.e. path/ls
 char	**append_cmd(char **paths_array, char *cmd)
 {
 	int		i;
@@ -92,9 +92,10 @@ static char	*search_path(char **paths_array)
 	return (free_array(paths_array), result);
 }
 
-// If cmd starts with '/', it's an absolute path - skip PATH search.
+// If cmd starts with '/' or './', it's an absolute/relative path -
+// skip PATH search.
 // F_OK checks existence, X_OK checks executability.
-// Exists but not executable - exit 126. Not found - return NULL → exit 127.
+// Exists but not executable - exit 126. Not found - return NULL,exit 127.
 char	*get_path(char *cmd, char **envp)
 {
 	char	**paths_array;
@@ -106,7 +107,7 @@ char	*get_path(char *cmd, char **envp)
 		free(cmd_name);
 		return (NULL);
 	}
-	if (cmd_name[0] == '/')
+	if (cmd_name[0] == '/' || (cmd_name[0] == '.' && cmd_name[1] == '/'))
 	{
 		if (access(cmd_name, F_OK) == 0)
 			return (cmd_name);
