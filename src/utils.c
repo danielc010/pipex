@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/02 14:57:36 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/18 05:58:03 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/18 13:26:30 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,13 +21,20 @@
 // empty input while childn's stdout goes nowhere and exits 0.
 static void	open_files(char **argv, t_pipex *data, int argc)
 {
+	int	saved_errno;
+
 	if (!argv || !data)
 		return ;
 	data->infile_fd = open(argv[1], O_RDONLY);
 	if (data->infile_fd == -1)
 	{
-		perror(argv[1]);
-		if (errno == EACCES)
+		saved_errno = errno;
+		write(2, "zsh: ", 6);
+		write(2, argv[1], ft_strlen(argv[1]));
+		write(2, ": ", 2);
+		write(2, strerror(saved_errno), ft_strlen(strerror(saved_errno)));
+		write(2, "\n", 2);
+		if (saved_errno == EACCES || saved_errno == ENOENT)
 			data->infile_fd = open("/dev/null", O_RDONLY);
 		else
 			exit(EXIT_FAILURE);
@@ -36,7 +43,8 @@ static void	open_files(char **argv, t_pipex *data, int argc)
 	if (data->outfile_fd == -1)
 	{
 		perror(argv[argc - 1]);
-		exit(EXIT_FAILURE);
+		data->outfile_err = 1;
+		data->outfile_fd = open("/dev/null", O_WRONLY);
 	}
 }
 
@@ -65,22 +73,6 @@ void	create_pipe(t_pipex *data)
 	}
 }
 
-// Close all pipes
-void	close_all_pipes(int **pipes, int num_pipes)
-{
-	int	i;
-
-	if (!pipes)
-		return ;
-	i = 0;
-	while (i < num_pipes)
-	{
-		close(pipes[i][0]);
-		close(pipes[i][1]);
-		++i;
-	}
-}
-
 void	init_pipex(t_pipex *data, char **argv, char**envp, int argc)
 {
 	int	i;
@@ -88,6 +80,8 @@ void	init_pipex(t_pipex *data, char **argv, char**envp, int argc)
 	if (!data || !argv || !envp)
 		error_exit("Invalid arguments to init_pipex");
 	data->heredoc = 0;
+	data->outfile_err = 0;
+	data->pids = NULL;
 	data->num_cmds = argc - 3;
 	data->cmd_paths = malloc(sizeof(char *) * (data->num_cmds + 1));
 	if (!data->cmd_paths)

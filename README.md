@@ -1,6 +1,6 @@
-# pipex
-
 _This project has been created as part of the 42 curriculum by dachin_
+
+# pipex
 
 ## Description
 
@@ -36,9 +36,10 @@ make re
 ## Bonus - heredoc pipe (equivalent to cmd1 << LIMITER | cmd2 >> file)
 ./pipex here_doc LIMITER cmd1 cmd2 ... cmdn file
 
-# Useful valgrind check for open fds
-valgrind --track-fds=yes
+# Valgrind checks
 
+## Useful valgrind check for open fds
+valgrind --leak-check=full --show-leak-kinds=all --track-fds=yes
 ```
 
 ## Resources & Credits

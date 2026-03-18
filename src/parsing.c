@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/02 15:33:18 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/18 07:41:38 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/18 11:43:25 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,8 +101,11 @@ char	*get_path(char *cmd, char **envp)
 	char	*cmd_name;
 
 	cmd_name = extract_cmd_name(cmd);
-	if (!cmd_name)
+	if (!cmd_name || cmd_name[0] == '\0')
+	{
+		free(cmd_name);
 		return (NULL);
+	}
 	if (cmd_name[0] == '/')
 	{
 		if (access(cmd_name, F_OK) == 0)

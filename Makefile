@@ -6,14 +6,13 @@
 #    By: dachin <dachin@student.codam.nl>             +#+                      #
 #                                                    +#+                       #
 #    Created: 2026/02/18 12:17:36 by dachin        #+#    #+#                  #
-#    Updated: 2026/03/13 06:43:45 by dachin        ########   odam.nl          #
+#    Updated: 2026/03/18 13:18:11 by dachin        ########   odam.nl          #
 #                                                                              #
 # **************************************************************************** #
 
-
 # List of source files
 SRCS = src/main.c src/parsing.c src/utils.c src/utils2.c src/utils3.c \
-		src/heredoc.c
+		src/utils4.c src/heredoc.c
 
 # Creates object files by replacing .c with .o. $ references variables or automatic variables
 OBJS = $(SRCS:.c=.o)
@@ -69,7 +68,7 @@ fclean:	clean
 re:	fclean all
 
 # Declares these targets as phony (not actual files), so Make always runs them when requested.
-.PHONY: all clean fclean re test sanitize
+.PHONY: all clean fclean re test sanitize debug
 
 # ===== TEST SECTION =====
 # Run bash test suite
@@ -77,6 +76,10 @@ test: $(NAME)
 	@echo "Running test suite..."
 	@cd tests && ./test.sh
 
-# fsanitise for macOS
+# fsanitise
 sanitize: CFLAGS += -fsanitize=address -g
 sanitize: re
+
+# GDB
+debug: CFLAGS += -g
+debug: re

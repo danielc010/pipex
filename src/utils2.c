@@ -6,7 +6,7 @@
 /*   By: dachin <dachin@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/03/04 09:18:49 by dachin        #+#    #+#                 */
-/*   Updated: 2026/03/18 06:47:14 by dachin        ########   odam.nl         */
+/*   Updated: 2026/03/18 13:26:05 by dachin        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,22 @@ void	free_array(char **array)
 		++i;
 	}
 	free(array);
+}
+
+// Close all pipes
+void	close_all_pipes(int **pipes, int num_pipes)
+{
+	int	i;
+
+	if (!pipes)
+		return ;
+	i = 0;
+	while (i < num_pipes)
+	{
+		close(pipes[i][0]);
+		close(pipes[i][1]);
+		++i;
+	}
 }
 
 // Close fds, free memory without exit
@@ -68,25 +84,23 @@ void	cleanup_and_exit(t_pipex *data)
 
 // Fork once for every cmd, as it needes its own process image.
 // Need dup & execve for the child process i.e. pid == 0.
-pid_t	*fork_children(t_pipex *data, char **argv, char **envp)
+void	fork_children(t_pipex *data, char **argv, char **envp)
 {
-	pid_t	*pids;
-	int		i;
+	int	i;
 
 	if (!data || !argv || !envp)
 		cleanup_and_exit(data);
-	pids = malloc(sizeof(pid_t) * data->num_cmds);
-	if (!pids)
+	data->pids = malloc(sizeof(pid_t) * data->num_cmds);
+	if (!data->pids)
 		cleanup_and_exit(data);
 	i = 0;
 	while (i < data->num_cmds)
 	{
-		pids[i] = fork();
-		if (pids[i] == -1)
+		data->pids[i] = fork();
+		if (data->pids[i] == -1)
 			cleanup_and_exit(data);
-		if (pids[i] == 0)
+		if (data->pids[i] == 0)
 			execute_cmd(data, i, argv, envp);
 		++i;
 	}
-	return (pids);
 }

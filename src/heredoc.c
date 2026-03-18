@@ -51,8 +51,8 @@ static void	open_files_heredoc(t_pipex *data, char **argv, int argc)
 	if (data->outfile_fd == -1)
 	{
 		perror("Error opening outfile");
-		close(data->infile_fd);
-		exit(EXIT_FAILURE);
+		data->outfile_err = 1;
+		data->outfile_fd = open("/dev/null", O_WRONLY);
 	}
 }
 
@@ -64,6 +64,8 @@ void	init_heredoc(t_pipex *data, char **argv, char**envp, int argc)
 	if (!data || !argv || !envp)
 		error_exit("Invalid arguments to init_heredoc");
 	data->heredoc = 1;
+	data->outfile_err = 0;
+	data->pids = NULL;
 	data->limiter = argv[2];
 	data->num_cmds = argc - 4;
 	read_heredoc(data);

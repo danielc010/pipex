@@ -15,7 +15,6 @@
 int	main(int argc, char **argv, char **envp)
 {
 	t_pipex	data;
-	pid_t	*pids;
 
 	if (argc < 5)
 	{
@@ -25,16 +24,16 @@ int	main(int argc, char **argv, char **envp)
 	else if (argc >= 6 && ft_strncmp(argv[1], "here_doc", 9) == 0)
 	{
 		init_heredoc(&data, argv, envp, argc);
-		pids = fork_children(&data, argv, envp);
+		fork_children(&data, argv, envp);
 		cleanup_resources(&data);
-		wait_children(pids, data.num_cmds);
+		wait_children(data.pids, data.num_cmds, data.outfile_err);
 	}
 	else if (argc >= 5)
 	{
 		init_pipex(&data, argv, envp, argc);
-		pids = fork_children(&data, argv, envp);
+		fork_children(&data, argv, envp);
 		cleanup_resources(&data);
-		wait_children(pids, data.num_cmds);
+		wait_children(data.pids, data.num_cmds, data.outfile_err);
 	}
 	return (EXIT_SUCCESS);
 }

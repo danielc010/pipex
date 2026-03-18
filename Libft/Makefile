@@ -6,7 +6,7 @@
 #    By: dachin <dachin@student.codam.nl>             +#+                      #
 #                                                    +#+                       #
 #    Created: 2025/05/28 13:16:09 by dachin        #+#    #+#                  #
-#    Updated: 2026/03/18 06:08:07 by dachin        ########   odam.nl          #
+#    Updated: 2026/03/18 12:12:02 by dachin        ########   odam.nl          #
 #                                                                              #
 # **************************************************************************** #
 
@@ -73,4 +73,12 @@ re:				fclean all
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Declares these targets as phony (not actual files), so Make always runs them when requested.
-.PHONY:			all clean fclean re
+.PHONY:			all clean fclean re sanitize debug
+
+# fsanitise
+sanitize: CFLAGS += -fsanitize=address -g
+sanitize: re
+
+# GDB
+debug: CFLAGS += -g
+debug: re
